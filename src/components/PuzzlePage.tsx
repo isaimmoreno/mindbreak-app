@@ -33,7 +33,12 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const puzzleAreaRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+    const handleBtnClick = (e : React.MouseEvent<HTMLButtonElement>) =>{
+    e.preventDefault();
+    inputRef.current?.click();
+  }
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -202,7 +207,7 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
               </p>
             </div>
           </div>
-          <Button onClick={onNavigateHome} variant="outline" size="lg">
+          <Button onClick={onNavigateHome} variant="outline" size="lg" className='bechamel'>
             <Home className="w-5 h-5 mr-2" />
             Volver al Inicio
           </Button>
@@ -212,6 +217,7 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
           <Card className="p-12 border-2 border-dashed border-border hover:border-primary transition-colors">
             <label className="cursor-pointer block">
               <input
+                ref={inputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
@@ -229,8 +235,9 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
                     PNG, JPG, WEBP hasta 10MB
                   </p>
                 </div>
-                <Button type="button">
+                <Button type="button" onClick={handleBtnClick} className='bechamel' >
                   Elegir Imagen
+                  
                 </Button>
               </div>
             </label>
@@ -258,12 +265,12 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
                   </Select>
                 </div>
 
-                <Button onClick={shufflePuzzle} variant="default">
+                <Button onClick={shufflePuzzle} variant="default" className='bechamel'>
                   <Shuffle className="w-5 h-5 mr-2" />
                   Mezclar
                 </Button>
 
-                <Button onClick={initializePuzzle} variant="outline">
+                <Button onClick={initializePuzzle} variant="outline" className='bechamel-r'>
                   <RotateCcw className="w-5 h-5 mr-2" />
                   Reiniciar
                 </Button>
@@ -275,7 +282,7 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
                     onChange={handleImageUpload}
                     className="hidden"
                   />
-                  <Button type="button" variant="secondary" asChild>
+                  <Button type="button" variant="secondary" asChild className='bechamel-g'>
                     <span>
                       <Upload className="w-5 h-5 mr-2" />
                       Nueva Imagen
