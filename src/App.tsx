@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Upload, Download, Trash2, ImageIcon, Puzzle } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
@@ -9,6 +9,7 @@ import * as bodyPics from '@tensorflow-models/body-pix'
 
 type Page = 'home' | 'puzzle';
 
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [originalImage, setOriginalImage] = useState<string | null>(null);
@@ -16,9 +17,15 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   if (currentPage === 'puzzle') {
     return <PuzzlePage onNavigateHome={() => setCurrentPage('home')} />;
+  }
+
+  const handleBtnClick = (e : React.MouseEvent<HTMLButtonElement>) =>{
+    e.preventDefault();
+    inputRef.current?.click();
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,6 +209,8 @@ export default function App() {
     setError(null);
   };
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -230,6 +239,7 @@ export default function App() {
           <Card className="p-12 border-2 border-dashed border-border hover:border-primary transition-colors">
             <label className="cursor-pointer block">
               <input
+               ref={inputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
@@ -247,7 +257,7 @@ export default function App() {
                     PNG, JPG, WEBP hasta 10MB
                   </p>
                 </div>
-                <Button type="button">
+                <Button className='bechamel' onClick={handleBtnClick} type="button">
                   Elegir Imagen
                 </Button>
               </div>
@@ -318,6 +328,7 @@ export default function App() {
             {/* Action Buttons */}
             <div className="flex justify-center gap-4">
               <Button
+                className='bechamel'
                 onClick={handleDownload}
                 disabled={!processedImage}
                 size="lg"
@@ -326,6 +337,7 @@ export default function App() {
                 Descargar Resultado
               </Button>
               <Button
+                className='bechamel'
                 onClick={handleReset}
                 variant="outline"
                 size="lg"
@@ -352,9 +364,10 @@ export default function App() {
               </div>
             </div>
             <Button
+              className='shrink-0 bechamel'
               onClick={() => setCurrentPage('puzzle')}
               size="lg"
-              className="shrink-0"
+             
             >
               <Puzzle className="w-5 h-5 mr-2" />
               Crear Rompecabezas
