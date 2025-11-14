@@ -23,68 +23,68 @@ export default function App() {
   const [isDragOver, setIsDragOver] = useState(false);
   // shared file input ref must be declared unconditionally (hooks must run in the same order)
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [opacity, setOpacity] = useState(1);
+  const [opacity, setOpacity] = useState(1);
 
 
   //borregs draggable css
-    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setIsDragOver(true); 
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+  //end css stuff
+
+
+
+  // Reusable function to handle a single image file
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Por favor sube un archivo de imagen válido');
+      return;
+    }
+
+    setError(null);
+    setProcessedImage(null);
+    setProgress(0);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const imageDataUrl = e.target?.result as string;
+      setOriginalImage(imageDataUrl);
+
+      await processImage(imageDataUrl);
     };
+    reader.readAsDataURL(file);
+  };
 
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setIsDragOver(false);
-    };
-    //end css stuff
+  // Updated input change handler calls handleFile
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await handleFile(file);
+  };
 
-  
-    
-    // Reusable function to handle a single image file
-    const handleFile = async (file: File) => {
-      if (!file.type.startsWith('image/')) {
-        setError('Por favor sube un archivo de imagen válido');
-        return;
-      }
+  // New drop handler calls handleFile for each dropped file (or just the first)
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length === 0) return;
 
-      setError(null);
-      setProcessedImage(null);
-      setProgress(0);
+    // For example, handle only the first dropped image file:
+    await handleFile(droppedFiles[0]);
+  };
 
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const imageDataUrl = e.target?.result as string;
-        setOriginalImage(imageDataUrl);
+  // Also add this to allow dropping
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
 
-        await processImage(imageDataUrl);
-      };
-      reader.readAsDataURL(file);
-    };
-
-    // Updated input change handler calls handleFile
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      await handleFile(file);
-    };
-
-    // New drop handler calls handleFile for each dropped file (or just the first)
-    const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const droppedFiles = Array.from(e.dataTransfer.files);
-      if (droppedFiles.length === 0) return;
-
-      // For example, handle only the first dropped image file:
-      await handleFile(droppedFiles[0]);
-    };
-
-    // Also add this to allow dropping
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-    };
- 
-    //paralaxx scroll stuff
-    useEffect(() => {
+  //paralaxx scroll stuff
+  useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const maxScroll = 300; // Adjust this value to control when the image fully disappears
@@ -257,17 +257,17 @@ export default function App() {
   };
 
   if (currentPage === 'puzzle') {
-      return <PuzzlePage onNavigateHome={() => setCurrentPage('home')} />;
-    }
+    return <PuzzlePage onNavigateHome={() => setCurrentPage('home')} />;
+  }
 
 
   return (
 
     <div className='wrapper'>
 
-    <header>
-        <img src="/assets/foreground.png" className="foreground"/>
-        <img src="/assets/background.jpg" className="background"/>
+      <header>
+        <img src="/assets/foreground.png" className="foreground" />
+        <img src="/assets/background.jpg" className="background" />
         <TrueFocus
           sentence="Break Mind"
           manualMode={false}
@@ -276,152 +276,152 @@ export default function App() {
           animationDuration={2}
           pauseBetweenAnimations={1}
         />
-    </header>
-    <section>
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-              <div className="max-w-6xl mx-auto">
-                {/* Logo */}
-                <div className="mb-8">
-                  <h2 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    breakmind
-                  </h2>
-                </div>
+      </header>
+      <section>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+          <div className="max-w-6xl mx-auto">
+            {/* Logo */}
+            <div className="mb-8">
+              <h2 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                breakmind
+              </h2>
+            </div>
 
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="p-3 bg-primary rounded-xl">
-                      <ImageIcon className="w-8 h-8 text-primary-foreground" />
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="p-3 bg-primary rounded-xl">
+                  <ImageIcon className="w-8 h-8 text-primary-foreground" />
+                </div>
+                <h1 className="text-4xl">Eliminador de Fondo</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Sube una imagen y elimina su fondo al instante
+              </p>
+            </div>
+
+            {/* Upload Area */}
+            {!originalImage && (
+              <div id='cini'>
+                <Card className={`p-12 border-2 border-dashed border-border hover:border-primary transition-colors drop-zone ${isDragOver ? "drag-over" : ""}`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}>
+                  {/* hidden shared input */}
+                  <input
+                    id="app-file-input"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+
+                  <label htmlFor="app-file-input" className="cursor-pointer block">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="p-6 bg-muted rounded-full">
+                        <Upload className="w-12 h-12 text-muted-foreground" />
+                      </div>
+                      <div className="text-center">
+                        <p className="mb-2">
+                          Haz clic para subir o arrastra y suelta
+                        </p>
+                        <p className="text-muted-foreground">
+                          PNG, JPG, WEBP hasta 10MB
+                        </p>
+                      </div>
+                      <Button className='bechamel' type="button" onClick={() => fileInputRef.current?.click()}>
+                        Elegir Imagen
+                      </Button>
                     </div>
-                    <h1 className="text-4xl">Eliminador de Fondo</h1>
-                  </div>
-                  <p className="text-muted-foreground">
-                    Sube una imagen y elimina su fondo al instante
-                  </p>
-                </div>
+                  </label>
+                </Card>
+              </div>
+            )}
 
-                {/* Upload Area */}
-                {!originalImage && (
-                  <div id='cini'>
-                    <Card className={`p-12 border-2 border-dashed border-border hover:border-primary transition-colors drop-zone ${isDragOver ? "drag-over" : ""}`}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragEnter={handleDragEnter}
-                        onDragLeave={handleDragLeave}>
-                      {/* hidden shared input */}
-                      <input
-                        id="app-file-input"
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
+            {/* Processing Progress */}
+            {isProcessing && (
+              <Card className="p-8">
+                <div className="text-center mb-4">
+                  <p>Procesando tu imagen...</p>
+                </div>
+                <Progress value={progress} className="w-full" />
+                <p className="text-center text-muted-foreground mt-2">
+                  {progress}%
+                </p>
+              </Card>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <Card className="p-6 bg-destructive/10 border-destructive">
+                <p className="text-destructive text-center">{error}</p>
+              </Card>
+            )}
+
+            {/* Results */}
+            {originalImage && !isProcessing && (
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Original Image */}
+                  <Card className="overflow-hidden">
+                    <div className="p-4 bg-muted border-b">
+                      <h3>Original</h3>
+                    </div>
+                    <div className="p-4 bg-checkerboard min-h-[400px] flex items-center justify-center">
+                      <img
+                        src={originalImage}
+                        alt="Original"
+                        className="max-w-full max-h-[400px] object-contain"
                       />
-
-                      <label htmlFor="app-file-input" className="cursor-pointer block">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="p-6 bg-muted rounded-full">
-                            <Upload className="w-12 h-12 text-muted-foreground" />
-                          </div>
-                          <div className="text-center">
-                            <p className="mb-2">
-                              Haz clic para subir o arrastra y suelta
-                            </p>
-                            <p className="text-muted-foreground">
-                              PNG, JPG, WEBP hasta 10MB
-                            </p>
-                          </div>
-                          <Button className='bechamel' type="button" onClick={() => fileInputRef.current?.click()}>
-                            Elegir Imagen
-                          </Button>
-                        </div>
-                      </label>
-                    </Card>
-                  </div>
-                )}
-
-                {/* Processing Progress */}
-                {isProcessing && (
-                  <Card className="p-8">
-                    <div className="text-center mb-4">
-                      <p>Procesando tu imagen...</p>
                     </div>
-                    <Progress value={progress} className="w-full" />
-                    <p className="text-center text-muted-foreground mt-2">
-                      {progress}%
-                    </p>
                   </Card>
-                )}
 
-                {/* Error Message */}
-                {error && (
-                  <Card className="p-6 bg-destructive/10 border-destructive">
-                    <p className="text-destructive text-center">{error}</p>
+                  {/* Processed Image */}
+                  <Card className="overflow-hidden">
+                    <div className="p-4 bg-muted border-b">
+                      <h3>Fondo Eliminado</h3>
+                    </div>
+                    <div className="p-4 bg-checkerboard min-h-[400px] flex items-center justify-center">
+                      {processedImage ? (
+                        <img
+                          src={processedImage}
+                          alt="Procesada"
+                          className="max-w-full max-h-[400px] object-contain"
+                        />
+                      ) : (
+                        <div className="text-muted-foreground text-center">
+                          <ImageIcon className="w-16 h-16 mx-auto mb-2 opacity-50" />
+                          <p>Procesando...</p>
+                        </div>
+                      )}
+                    </div>
                   </Card>
-                )}
+                </div>
 
-                {/* Results */}
-                {originalImage && !isProcessing && (
-                  <div className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {/* Original Image */}
-                      <Card className="overflow-hidden">
-                        <div className="p-4 bg-muted border-b">
-                          <h3>Original</h3>
-                        </div>
-                        <div className="p-4 bg-checkerboard min-h-[400px] flex items-center justify-center">
-                          <img
-                            src={originalImage}
-                            alt="Original"
-                            className="max-w-full max-h-[400px] object-contain"
-                          />
-                        </div>
-                      </Card>
+                {/* Action Buttons */}
+                <div className="flex justify-center gap-4">
+                  <Button
+                    className='bechamel'
+                    onClick={handleDownload}
+                    disabled={!processedImage}
+                    size="lg"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Descargar Resultado
+                  </Button>
+                  <Button
+                    className='bechamel-g'
+                    onClick={handleReset}
+                    variant="outline"
+                    size="lg"
+                  >
+                    <Trash2 className="w-5 h-5 mr-2" />
+                    Subir Nueva Imagen
 
-                      {/* Processed Image */}
-                      <Card className="overflow-hidden">
-                        <div className="p-4 bg-muted border-b">
-                          <h3>Fondo Eliminado</h3>
-                        </div>
-                        <div className="p-4 bg-checkerboard min-h-[400px] flex items-center justify-center">
-                          {processedImage ? (
-                            <img
-                              src={processedImage}
-                              alt="Procesada"
-                              className="max-w-full max-h-[400px] object-contain"
-                            />
-                          ) : (
-                            <div className="text-muted-foreground text-center">
-                              <ImageIcon className="w-16 h-16 mx-auto mb-2 opacity-50" />
-                              <p>Procesando...</p>
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-center gap-4">
-                      <Button
-                        className='bechamel'
-                        onClick={handleDownload}
-                        disabled={!processedImage}
-                        size="lg"
-                      >
-                        <Download className="w-5 h-5 mr-2" />
-                        Descargar Resultado
-                      </Button>
-                      <Button
-                        className='bechamel-g'
-                        onClick={handleReset}
-                        variant="outline"
-                        size="lg"
-                      >
-                        <Trash2 className="w-5 h-5 mr-2" />
-                        Subir Nueva Imagen
-                        
-                      </Button>
-                    </div>
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -473,8 +473,8 @@ export default function App() {
               background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
             }
           `}</style>
-          </div>
-        </section>
+        </div>
+      </section>
     </div>
   );
 }
