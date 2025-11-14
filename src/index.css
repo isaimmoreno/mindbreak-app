@@ -1854,6 +1854,8 @@ html {
     transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0));
   }
 }
+
+/*borregs*/
 .bechamel{
       transition: transform 0.3s ease-in-out; /* Smooth transition for transform changes */
       cursor:grabbing;
@@ -1870,15 +1872,77 @@ html {
 }.bechamel:active{
       transform: scale(1.05);
 }.drop-zone {
+
   padding: 20px;
   text-align: center;
   transition: all 0.3s ease;
   cursor: pointer;
-}.drop-zone.drag-over {
+}
+
+.drop-zone.drag-over {
   border-color: #4caf50; /* green border */
   background-color: #e8f5e9; /* light green background */
   box-shadow: 0 0 15px 5px rgba(76, 175, 80, 0.5);
   transform: scale(1.05);
+}body {
+  margin: 0;
+}
+
+.wrapper {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  perspective: 10px;
+}
+
+header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  transform-style: preserve-3d;
+  z-index: -1;
+}
+@keyframes fadeOutImg {
+  0% {
+    opacity: 1; /* Image is fully visible at the start */
+  }
+  100% {
+    opacity: 0; /* Image is fully transparent at the end */
+  }
+}
+.background {
+  transform: translateZ(-10px) scale(2);
+}
+
+.foreground {
+  transform: translateZ(-5px) scale(1.5);
+}
+
+.background{
+    position: absolute;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  z-index: -1;
+  animation-name: fadeOutImg;
+  animation-duration: 10s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+.foreground {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  object-fit:fill;
+  z-index: -1;
+}
+
+.title {
+  font-size: 7rem;
+  color: white;
+  text-shadow: 0 0 5px black;;
 }
 
 
