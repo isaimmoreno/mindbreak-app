@@ -1,12 +1,11 @@
-import { useState, useRef } from 'react';
-import { Upload, Download, Trash2, ImageIcon, Puzzle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Upload, Download, Trash2, ImageIcon, Puzzle, Sparkles, Zap, ArrowUp, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Progress } from './components/ui/progress';
+import { removeBackground } from '@imgly/background-removal';
 import { PuzzlePage } from './components/PuzzlePage';
-import '@tensorflow/tfjs';
-import * as bodyPics from '@tensorflow-models/body-pix'
-import { div } from '@tensorflow/tfjs';
+import { ImageWithFallback } from './components/figma/ImageWithFallback';
 
 type Page = 'home' | 'puzzle';
 
@@ -17,73 +16,54 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [files, setFiles] = useState([]);
-  //vv esto solo es para q el css funcione  
-  const [isDragOver, setIsDragOver] = useState(false);
-  // shared file input ref must be declared unconditionally (hooks must run in the same order)
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  //borregs draggable css
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-  e.preventDefault();
-  setIsDragOver(true);
-};
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-  e.preventDefault();
-  setIsDragOver(false);
-};
-//end css stuff
+  const scrollToAbout = () => {
+    document.getElementById('nosotros')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-  
   if (currentPage === 'puzzle') {
     return <PuzzlePage onNavigateHome={() => setCurrentPage('home')} />;
   }
-// Reusable function to handle a single image file
-const handleFile = async (file: File) => {
-  if (!file.type.startsWith('image/')) {
-    setError('Por favor sube un archivo de imagen válido');
-    return;
-  }
 
-  setError(null);
-  setProcessedImage(null);
-  setProgress(0);
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const imageDataUrl = e.target?.result as string;
-    setOriginalImage(imageDataUrl);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Por favor sube un archivo de imagen válido');
+      return;
+    }
 
-    await processImage(imageDataUrl);
+    // Reset states
+    setError(null);
+    setProcessedImage(null);
+    setProgress(0);
+
+    // Read and display original image
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const imageDataUrl = e.target?.result as string;
+      setOriginalImage(imageDataUrl);
+      
+      // Process the image
+      await processImage(imageDataUrl);
+    };
+    reader.readAsDataURL(file);
   };
-  reader.readAsDataURL(file);
-};
-
-    // Updated input change handler calls handleFile
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      await handleFile(file);
-    };
-
-    // New drop handler calls handleFile for each dropped file (or just the first)
-    const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const droppedFiles = Array.from(e.dataTransfer.files);
-      if (droppedFiles.length === 0) return;
-
-      // For example, handle only the first dropped image file:
-      await handleFile(droppedFiles[0]);
-    };
-
-    // Also add this to allow dropping
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-    };
- 
-
 
   const processImage = async (imageUrl: string) => {
     setIsProcessing(true);
@@ -102,7 +82,10 @@ const handleFile = async (file: File) => {
       }, 200);
 
       // Remove background with single-thread configuration
-      const blob = await removeBackground(imageUrl);
+      const blob = await removeBackground(imageUrl, {
+        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/',
+        device: 'cpu',
+      });
       clearInterval(progressInterval);
       setProgress(100);
 
@@ -116,112 +99,6 @@ const handleFile = async (file: File) => {
       setIsProcessing(false);
     }
   };
-
-  const removeBackground = async (imageUrl: string): Promise<Blob> => {
-    return new Promise<Blob>(async (resolve, reject) => {
-      try {
-        // Update progress: starting
-        setProgress(20);
-
-        // Load image
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = imageUrl;
-        await new Promise<void>((res, rej) => {
-          img.onload = () => res();
-          img.onerror = (e) => rej(new Error('Error loading image'));
-        });
-        setProgress(30);
-
-        // Load BodyPix model (mobile config for speed)
-        const net = await bodyPics.load({
-          architecture: 'MobileNetV1',
-          outputStride: 16,
-          multiplier: 0.75,
-          quantBytes: 2,
-        } as any);
-        setProgress(50);
-
-        // Run person segmentation
-        const segmentation = await net.segmentPerson(img, {
-          internalResolution: 'medium',
-          segmentationThreshold: 0.7,
-          maxDetections: 1,
-        } as any);
-        setProgress(70);
-
-        // Draw image to canvas and apply alpha mask from segmentation
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('No canvas context');
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const pixelData = imageData.data;
-
-        // segmentation.data is a Uint8Array with 1 for person, 0 for background
-        const mask = segmentation.data;
-        // Safety: ensure mask length matches pixel count
-        const pixelCount = canvas.width * canvas.height;
-        if (mask.length !== pixelCount) {
-          // If sizes mismatch, try to resize mask via canvas (fallback to drawMask)
-          // Use bodyPix.toMask + drawMask as fallback
-          const maskImage = bodyPics.toMask(segmentation);
-          // drawMask will overlay the foreground; instead we'll use drawMask onto a separate canvas
-          const outCanvas = document.createElement('canvas');
-          outCanvas.width = canvas.width;
-          outCanvas.height = canvas.height;
-          const outCtx = outCanvas.getContext('2d');
-          if (!outCtx) throw new Error('No canvas context');
-          // draw original
-          outCtx.drawImage(img, 0, 0, outCanvas.width, outCanvas.height);
-          // draw mask and use it to clear background
-          // Create an ImageData from maskImage and apply alpha
-          const maskCanvas = document.createElement('canvas');
-          maskCanvas.width = maskImage.width;
-          maskCanvas.height = maskImage.height;
-          const maskCtx = maskCanvas.getContext('2d');
-          if (!maskCtx) throw new Error('No canvas context');
-          maskCtx.putImageData(maskImage, 0, 0);
-          // Draw scaled mask onto outCtx and use globalCompositeOperation to keep only person
-          outCtx.globalCompositeOperation = 'destination-in';
-          outCtx.drawImage(maskCanvas, 0, 0, outCanvas.width, outCanvas.height);
-          outCtx.globalCompositeOperation = 'source-over';
-
-          setProgress(90);
-          outCanvas.toBlob((b) => {
-            if (b) resolve(b);
-            else reject(new Error('toBlob failed'));
-          }, 'image/png');
-          return;
-        }
-
-        // Apply mask directly to pixel alpha channel
-        for (let i = 0; i < pixelCount; i++) {
-          const alphaIndex = i * 4 + 3;
-          if (mask[i] === 0) {
-            // background -> make transparent
-            pixelData[alphaIndex] = 0;
-          } else {
-            // keep original alpha (opaque)
-            pixelData[alphaIndex] = 255;
-          }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-        setProgress(90);
-
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error('toBlob failed'));
-        }, 'image/png');
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
 
   const handleDownload = () => {
     if (!processedImage) return;
@@ -239,72 +116,150 @@ const handleFile = async (file: File) => {
     setError(null);
   };
 
-
   return (
-    <div>
-    <script type='text/javascript'>
-    
-    </script>
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Logo */}
-        <div className="mb-8">
-          <h2 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            breakmind
-          </h2>
-        </div>
-
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-primary rounded-xl">
-              <ImageIcon className="w-8 h-8 text-primary-foreground" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Navigation Bar */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <h1 className="text-3xl tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent font-black" style={{ fontFamily: '"Orbitron", "Exo 2", "Space Grotesk", sans-serif' }}>
+              BREAKMIND
+            </h1>
+            
+            {/* Navigation Links */}
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Eliminar Fondo
+              </button>
+              <button 
+                onClick={() => setCurrentPage('puzzle')}
+                className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+              >
+                <Puzzle className="w-4 h-4" />
+                Rompecabezas
+              </button>
+              <button 
+                onClick={scrollToAbout}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Nosotros
+              </button>
             </div>
-            <h1 className="text-4xl">Eliminador de Fondo</h1>
           </div>
-          <p className="text-muted-foreground">
-            Sube una imagen y elimina su fondo al instante
+        </div>
+      </nav>
+
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Header with feature badges */}
+        <div className="text-center mb-12">
+          <div className="flex items-start justify-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+              <ImageIcon className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl">Eliminador de Fondo</h1>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                  <Sparkles className="w-3 h-3" />
+                  IA Avanzada
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                  <Zap className="w-3 h-3" />
+                  100% Gratis
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="text-muted-foreground text-lg">
+            Sube una imagen y elimina su fondo al instante con tecnología de IA
           </p>
         </div>
 
+        {/* Example Section */}
+        {!originalImage && (
+          <Card className="mb-12 overflow-hidden border-2 shadow-xl">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+              <h2 className="text-white text-center">✨ Mira lo que puedes lograr</h2>
+            </div>
+            <div className="p-8 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
+              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                {/* Antes */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-1 w-8 bg-gray-400 rounded"></div>
+                    <span className="text-gray-600">ANTES</span>
+                    <div className="h-1 w-8 bg-gray-400 rounded"></div>
+                  </div>
+                  <div className="relative overflow-hidden rounded-xl border-4 border-gray-200 shadow-lg transform hover:scale-105 transition-transform">
+                    <ImageWithFallback 
+                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI2NjgwMTZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                      alt="Ejemplo original"
+                      className="w-full h-80 object-cover"
+                    />
+                  </div>
+                </div>
+                
+                {/* Después */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-1 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
+                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">DESPUÉS</span>
+                    <div className="h-1 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
+                  </div>
+                  <div className="relative overflow-hidden rounded-xl border-4 border-purple-300 shadow-xl transform hover:scale-105 transition-transform bg-checkerboard">
+                    <ImageWithFallback 
+                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI2NjgwMTZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                      alt="Ejemplo con fondo removido"
+                      className="w-full h-80 object-cover"
+                    />
+                    <div className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-full text-sm shadow-lg flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Fondo Eliminado
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center mt-6 p-4 bg-white/70 rounded-lg backdrop-blur-sm">
+                <p className="text-muted-foreground">
+                  🎯 Perfecto para fotos de productos, retratos profesionales, diseño gráfico y más
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Upload Area */}
         {!originalImage && (
-          <div id='cini'>
-            <Card className={`p-12 border-2 border-dashed border-border hover:border-primary transition-colors drop-zone ${isDragOver ? "drag-over" : ""}`}
-    onDrop={handleDrop}
-    onDragOver={handleDragOver}
-    onDragEnter={handleDragEnter}
-    onDragLeave={handleDragLeave}>
-              {/* hidden shared input */}
+          <Card className="p-12 border-2 border-dashed border-border hover:border-primary transition-all hover:shadow-lg hover:scale-[1.02] duration-300">
+            <label className="cursor-pointer block">
               <input
-                id="app-file-input"
-                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="hidden"
               />
-
-              <label htmlFor="app-file-input" className="cursor-pointer block">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="p-6 bg-muted rounded-full">
-                    <Upload className="w-12 h-12 text-muted-foreground" />
-                  </div>
-                  <div className="text-center">
-                    <p className="mb-2">
-                      Haz clic para subir o arrastra y suelta
-                    </p>
-                    <p className="text-muted-foreground">
-                      PNG, JPG, WEBP hasta 10MB
-                    </p>
-                  </div>
-                  <Button className='bechamel' type="button" onClick={() => fileInputRef.current?.click()}>
-                    Elegir Imagen
-                  </Button>
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-6 bg-muted rounded-full">
+                  <Upload className="w-12 h-12 text-muted-foreground" />
                 </div>
-              </label>
-            </Card>
-          </div>
+                <div className="text-center">
+                  <p className="mb-2">
+                    Haz clic para subir o arrastra y suelta
+                  </p>
+                  <p className="text-muted-foreground">
+                    PNG, JPG, WEBP hasta 10MB
+                  </p>
+                </div>
+                <Button type="button">
+                  Elegir Imagen
+                </Button>
+              </div>
+            </label>
+          </Card>
         )}
 
         {/* Processing Progress */}
@@ -370,7 +325,6 @@ const handleFile = async (file: File) => {
             {/* Action Buttons */}
             <div className="flex justify-center gap-4">
               <Button
-                className='bechamel'
                 onClick={handleDownload}
                 disabled={!processedImage}
                 size="lg"
@@ -379,55 +333,94 @@ const handleFile = async (file: File) => {
                 Descargar Resultado
               </Button>
               <Button
-                className='bechamel-g'
                 onClick={handleReset}
                 variant="outline"
                 size="lg"
               >
                 <Trash2 className="w-5 h-5 mr-2" />
                 Subir Nueva Imagen
-                
               </Button>
             </div>
           </div>
         )}
+      </div>
 
-        {/* Puzzle Feature CTA */}
-        <Card className="mt-12 p-8 bg-gradient-to-r from-purple-50 to-pink-50 border-2">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-purple-600 rounded-xl">
-                <Puzzle className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h2 className="mb-2">¡Prueba Nuestro Rompecabezas!</h2>
-                <p className="text-muted-foreground max-w-xl">
-                  Sube cualquier imagen y conviértela en un rompecabezas interactivo. Elige tu nivel de dificultad y pon a prueba tus habilidades resolviendo las piezas mezcladas. ¡Perfecto para desafíos divertidos o entrenar tu reconocimiento espacial!
-                </p>
+      {/* Footer Section */}
+      <footer className="mt-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white" id="nosotros">
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="grid md:grid-cols-2 gap-12">
+            {/* Social Media - Left */}
+            <div>
+              <h3 className="text-2xl mb-6">Síguenos en Redes Sociales</h3>
+              <div className="flex gap-6">
+                <a 
+                  href="https://www.facebook.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <div className="bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-colors">
+                    <Facebook className="w-8 h-8" />
+                  </div>
+                </a>
+                <a 
+                  href="https://www.twitter.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <div className="bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-colors">
+                    <Twitter className="w-8 h-8" />
+                  </div>
+                </a>
+                <a 
+                  href="https://www.instagram.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <div className="bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-colors">
+                    <Instagram className="w-8 h-8" />
+                  </div>
+                </a>
+                <a 
+                  href="https://www.linkedin.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <div className="bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-colors">
+                    <Linkedin className="w-8 h-8" />
+                  </div>
+                </a>
               </div>
             </div>
-            <Button
-              onClick={() => setCurrentPage('puzzle')}
-              size="lg"
-              className="shrink-0 bechamel"
-            >
-              <Puzzle className="w-5 h-5 mr-2" />
-              Crear Rompecabezas
-            </Button>
-          </div>
-        </Card>
 
-        {/* About Section */}
-        <div className="mt-12 pb-8 text-center max-w-3xl mx-auto">
-          <h3 className="mb-4">Acerca de Esta Aplicación</h3>
-          <p className="text-muted-foreground mb-4">
-            Esta aplicación web ofrece dos poderosas herramientas para imágenes. El Eliminador de Fondo utiliza tecnología avanzada de IA para detectar y eliminar automáticamente los fondos de tus imágenes, perfecto para crear fotos profesionales de productos, imágenes de perfil o recursos de diseño. La función de Rompecabezas te permite transformar cualquier imagen en un juego de rompecabezas interactivo con niveles de dificultad personalizables.
-          </p>
-          <p className="text-muted-foreground">
-            Todo el procesamiento ocurre directamente en tu navegador, asegurando que tus imágenes permanezcan privadas y seguras. Sin subidas a servidores externos, sin recopilación de datos - solo herramientas de imagen simples y efectivas al alcance de tu mano.
-          </p>
+            {/* About Us - Right */}
+            <div>
+              <h3 className="text-2xl mb-6">Quiénes Somos</h3>
+              <p className="text-white/90 leading-relaxed">
+                Somos un equipo de desarrolladores, diseñadores y analistas comprometidos con crear herramientas web innovadoras que transformen la manera en que interactúas con tus imágenes y tu imaginación.
+              </p>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="mt-12 pt-6 border-t border-white/20 text-center text-white/70">
+            <p>© {new Date().getFullYear()} Breakmind. Todos los derechos reservados.</p>
+          </div>
         </div>
-      </div>
+      </footer>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <Button
+          onClick={scrollToTop}
+          className="fixed bottom-4 right-4 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </Button>
+      )}
 
       <style>{`
         .bg-checkerboard {
@@ -440,6 +433,6 @@ const handleFile = async (file: File) => {
           background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
         }
       `}</style>
-    </div></div>
+    </div>
   );
 }
