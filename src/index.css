@@ -1865,6 +1865,7 @@ html {
       transform: scale(1.1); /* Grow to 110% of its original size */
 }
 .bechamel:hover{
+      color: #ffffff;
       background-color: #9810fa;
       transform: scale(1.1); /* Grow to 110% of its original size */
 }.bechamel:active{
@@ -1931,6 +1932,11 @@ html {
   float: right;
 }.navitems{
   margin-right: 60px;
+
+}.navitems > button{
+  width: 11em;
+}.navitems > button > svg{
+  display: inline-block;
 }.bg-checkerboard {
           background-image: 
             linear-gradient(45deg, #cbd5e1 25%, transparent 25%),
@@ -1942,13 +1948,14 @@ html {
 }.greybtn{
   background-color: lightgray;
 }.footing{
-  position: fixed;
   left: 0;
   bottom: 0;
   width: 100%;
+  max-height: 20vh;
   z-index: 50;
+  margin-top: 20vh;
 }.maincont{
-  padding-bottom: 500px;
+  padding-bottom: 200px;
 }
 
 
