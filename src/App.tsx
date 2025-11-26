@@ -204,15 +204,16 @@ export default function App() {
               onClick={() => setCurrentPage('home')} 
               className={`selected px-4 py-2 text-sm font-medium rounded-full transition-all float-left `}
             >
+              <ImageIcon className="w-4 h-4 text-white " />
               Eliminar Fondo
             </button>
-
+              
             {/* THE PUZZLE BUTTON */}
             <button 
               onClick={() => setCurrentPage('puzzle')} 
-              className={`bechamel group px-4 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-2 `}
+              className={`bechamel float-right group px-4 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-2 `}
             >
-              <Puzzle className={`w-4 h-4 transition-transform group-hover:rotate-12 `} />
+              <Puzzle className={`w-4 h-4  `} />
               Rompecabezas
             </button>
 
