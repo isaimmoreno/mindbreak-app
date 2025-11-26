@@ -234,9 +234,10 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
               onClick={onNavigateHome} 
               className="bechamel px-4 py-2 text-sm font-medium rounded-full transition-all float-left"
             >
+              <ImageIcon className="w-4 h-4 " />
               Eliminar Fondo
             </button>
-
+              
             {/* Rompecabezas (Active State - 'selected') */}
             <button 
               className="selected group px-4 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-2"
