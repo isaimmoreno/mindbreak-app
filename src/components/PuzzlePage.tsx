@@ -234,7 +234,7 @@ export function PuzzlePage({ onNavigateHome }: PuzzlePageProps) {
             {/* Eliminar Fondo (Inactive State) */}
             <button 
               onClick={onNavigateHome} 
-              className="bechamel mr-3 px-4 py-2 text-sm font-medium rounded-full transition-all float-left"
+              className="bechamel mr-3 px-4 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-2"
             >
               <ImageIcon className='w-4 h-4 '></ImageIcon>
 
