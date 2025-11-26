@@ -1966,4 +1966,64 @@ html {
   display: inline-block;
 }.footing >*{
   margin-left: 5px;
+}/* Parallax Wrapper - This becomes the main scroll container */
+.parallax-wrapper {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  perspective: 10px;
+  scroll-behavior: smooth;
+}
+
+/* The Hero Section */
+.parallax-header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  transform-style: preserve-3d;
+  z-index: -1;
+}
+
+/* The Content Below (Your App) */
+.parallax-content {
+  position: relative;
+  z-index: 10;
+  background-color: #f8fafc; /* slate-50 to cover the hero when scrolling up */
+}
+
+/* Animation */
+@keyframes fadeOutImg {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Layers */
+.parallax-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  z-index: -1;
+  transform: translateZ(-10px) scale(2);
+  /* Fade out animation */
+  animation: fadeOutImg 12s ease-out forwards;
+}
+
+.parallax-fg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 70%;
+  width: 70%;
+  object-fit: fill; /* Changed to cover usually looks better, or contain/fill */
+  z-index: -1;
+  transform: translateX(500px) scale(1.2);
+
+}.navitems > button{
+  text-wrap: none;
+  white-space: nowrap;
 }
