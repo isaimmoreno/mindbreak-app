@@ -57,4 +57,5 @@
       port: 3000,
       open: true,
     },
+    base: "/mindbreak-app/"
   });

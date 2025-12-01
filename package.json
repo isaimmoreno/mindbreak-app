@@ -36,6 +36,7 @@
             "clsx": "*",
             "cmdk": "^1.1.1",
             "embla-carousel-react": "^8.6.0",
+            "gh-pages": "^6.3.0",
             "input-otp": "^1.4.2",
             "lucide-react": "^0.487.0",
             "next-themes": "^0.4.6",
@@ -58,8 +59,11 @@
             "typescript": "^5.9.3",
             "vite": "^6.3.5"
       },
+      "homepage": "https://isaimmoreno.github.io/mindbreak-app/",
       "scripts": {
             "dev": "vite",
-            "build": "vite build"
+            "build": "vite build",
+            "predeploy" : "npm run build",
+            "deploy" : "gh-pages -d build"
       }
 }
