@@ -57,5 +57,5 @@
       port: 3000,
       open: true,
     },
-    base: "/mindbreak-app/"
+    base: "https://borregs.github.io/mindbreak-app"
   });
